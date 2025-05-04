@@ -1,7 +1,7 @@
 package cycletlsR_test
 
 import (
-	cycletls "github.com/Danny-Dasilva/CycleTLS/cycletls"
+	cycletls "github.com/Scryptor/cycletlsR"
 	"testing"
 )
 

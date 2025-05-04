@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"testing"
 
-	cycletls "github.com/Danny-Dasilva/CycleTLS/cycletls"
+	cycletls "github.com/Scryptor/cycletlsR"
 )
 
 type FormResponse struct {

@@ -5,7 +5,7 @@ package cycletlsR_test
 
 import (
 	//"fmt"
-	cycletls "github.com/Danny-Dasilva/CycleTLS/cycletls"
+	cycletls "github.com/Scryptor/cycletlsR"
 	"log"
 	"runtime"
 	"testing"

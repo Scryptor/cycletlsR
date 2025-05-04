@@ -8,7 +8,7 @@ import (
 	"log"
 	"testing"
 
-	cycletls "github.com/Danny-Dasilva/CycleTLS/cycletls"
+	cycletls "github.com/Scryptor/cycletlsR"
 )
 
 func TestForceHTTP1_h2(t *testing.T) {

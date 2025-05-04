@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	cycletls "github.com/Danny-Dasilva/CycleTLS/cycletls"
+	cycletls "github.com/Scryptor/cycletlsR"
 )
 
 func SimpleFileWriteTest(t *testing.T) {

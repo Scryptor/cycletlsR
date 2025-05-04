@@ -2,7 +2,7 @@ package cycletlsR_test
 
 import (
 	"encoding/json"
-	cycletls "github.com/Danny-Dasilva/CycleTLS/cycletls"
+	cycletls "github.com/Scryptor/cycletlsR"
 	"net/http/cookiejar"
 	"net/url"
 	"reflect"

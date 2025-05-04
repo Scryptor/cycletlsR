@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	cycletls "github.com/Danny-Dasilva/CycleTLS/cycletls"
+	cycletls "github.com/Scryptor/cycletlsR"
 )
 
 type CycleTLSOptions struct {

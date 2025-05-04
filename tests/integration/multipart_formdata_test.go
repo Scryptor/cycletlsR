@@ -11,7 +11,7 @@ import (
 	"os"
 	"testing"
 
-	cycletls "github.com/Danny-Dasilva/CycleTLS/cycletls"
+	cycletls "github.com/Scryptor/cycletlsR"
 )
 
 type HttpBinResponse struct {

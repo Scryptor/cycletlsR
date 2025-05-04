@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	cycletls "github.com/Danny-Dasilva/CycleTLS/cycletls"
+	cycletls "github.com/Scryptor/cycletlsR"
 )
 
 type FullResp struct {
