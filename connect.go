@@ -1,4 +1,4 @@
-package cycletls
+package cycletlsR
 
 // borrowed from from https://github.com/caddyserver/forwardproxy/blob/master/httpclient/httpclient.go
 import (

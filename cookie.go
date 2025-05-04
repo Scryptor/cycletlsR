@@ -1,4 +1,4 @@
-package cycletls
+package cycletlsR
 
 import (
 	http "github.com/Danny-Dasilva/fhttp"

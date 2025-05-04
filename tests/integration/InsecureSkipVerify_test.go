@@ -1,7 +1,7 @@
 //go:build integration
 // +build integration
 
-package cycletls_test
+package cycletlsR_test
 
 import (
 	"log"
