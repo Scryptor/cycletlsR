@@ -1,7 +1,7 @@
 package cycletlsR
 
 import (
-	http "github.com/Danny-Dasilva/fhttp"
+	http "github.com/Scryptor/fhttp"
 
 	"time"
 
@@ -43,7 +43,7 @@ func clientBuilder(browser Browser, dialer proxy.ContextDialer, timeout int, dis
 // import (
 //
 //	"github.com/Danny-Dasilva/CycleTLS/cycletls"
-//	http "github.com/Danny-Dasilva/fhttp" // note this is a drop-in replacement for net/http
+//	http "github.com/Scryptor/fhttp" // note this is a drop-in replacement for net/http
 //
 // )
 //

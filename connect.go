@@ -14,8 +14,8 @@ import (
 	"strconv"
 	"sync"
 
-	http "github.com/Danny-Dasilva/fhttp"
-	http2 "github.com/Danny-Dasilva/fhttp/http2"
+	http "github.com/Scryptor/fhttp"
+	http2 "github.com/Scryptor/fhttp/http2"
 	"golang.org/x/net/proxy"
 	"h12.io/socks"
 )

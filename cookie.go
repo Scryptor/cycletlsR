@@ -1,7 +1,7 @@
 package cycletlsR
 
 import (
-	http "github.com/Danny-Dasilva/fhttp"
+	http "github.com/Scryptor/fhttp"
 	nhttp "net/http"
 	"strconv"
 	"strings"
