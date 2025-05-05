@@ -316,14 +316,21 @@ func (h *http2Conn) Write(p []byte) (n int, err error) {
 }
 
 func (h *http2Conn) Close() error {
-	var retErr error = nil
-	if err := h.in.Close(); err != nil {
-		retErr = err
+	var inErr, outErr error
+
+	if h.in != nil {
+		inErr = h.in.Close()
 	}
-	if err := h.out.Close(); err != nil {
-		retErr = err
+
+	if h.out != nil {
+		outErr = h.out.Close()
 	}
-	return retErr
+
+	// Возвращаем первую встреченную ошибку
+	if inErr != nil {
+		return inErr
+	}
+	return outErr
 }
 
 func (h *http2Conn) CloseConn() error {
