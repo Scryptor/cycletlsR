@@ -1,6 +1,7 @@
 package cycletlsR
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"net/url"
@@ -34,36 +35,72 @@ func createErrorMessage(StatusCode int, err error, op string) errorMessage {
 }
 
 func parseError(err error) (errormessage errorMessage) {
-	var op string
-
-	httpError := string(err.Error())
-	status := lastString(strings.Split(httpError, "StatusCode:"))
-	StatusCode, _ := strconv.Atoi(status)
-	if StatusCode != 0 {
-		msg, debugger := createErrorString(err)
-		return errorMessage{StatusCode: StatusCode, debugger: debugger, ErrorMsg: msg}
+	if err == nil {
+		return errorMessage{StatusCode: 500, debugger: "no error provided", ErrorMsg: "Unknown error: nil was passed to parseError", Op: "unknown"}
 	}
-	if uerr, ok := err.(*url.Error); ok {
-		if noerr, ok := uerr.Err.(*net.OpError); ok {
-			op = noerr.Op
-			if SyscallError, ok := noerr.Err.(*os.SyscallError); ok {
+
+	// Значение по умолчанию для операции
+	op := "unknown"
+
+	// Проверяем наличие кода состояния в сообщении об ошибке
+	httpError := err.Error()
+	parts := strings.Split(httpError, "StatusCode:")
+
+	if len(parts) > 1 {
+		// Есть StatusCode в сообщении
+		statusStr := strings.TrimSpace(parts[len(parts)-1])
+		if statusCode, convErr := strconv.Atoi(statusStr); convErr == nil && statusCode != 0 {
+			msg, debugger := createErrorString(err)
+			return errorMessage{StatusCode: statusCode, debugger: debugger, ErrorMsg: msg, Op: op}
+		}
+	}
+
+	// Обработка различных типов ошибок с поддержкой wrapped errors
+	var uerr *url.Error
+	if errors.As(err, &uerr) {
+		var noerr *net.OpError
+		if errors.As(uerr.Err, &noerr) {
+			if noerr.Op != "" {
+				op = noerr.Op
+			}
+
+			var syscallErr *os.SyscallError
+			var addrErr *net.AddrError
+			var dnsErr *net.DNSError
+
+			switch {
+			case errors.As(noerr.Err, &syscallErr):
 				if noerr.Timeout() {
-					return createErrorMessage(408, SyscallError, op)
+					return createErrorMessage(408, syscallErr, op) // Timeout
 				}
-				return createErrorMessage(401, SyscallError, op)
-			} else if AddrError, ok := noerr.Err.(*net.AddrError); ok {
-				return createErrorMessage(405, AddrError, op)
-			} else if DNSError, ok := noerr.Err.(*net.DNSError); ok {
-				return createErrorMessage(421, DNSError, op)
-			} else {
-				return createErrorMessage(421, noerr, op)
+				return createErrorMessage(401, syscallErr, op) // Other syscall errors
+
+			case errors.As(noerr.Err, &addrErr):
+				return createErrorMessage(405, addrErr, op) // Address errors
+
+			case errors.As(noerr.Err, &dnsErr):
+				return createErrorMessage(421, dnsErr, op) // DNS errors
+
+			default:
+				return createErrorMessage(421, noerr, op) // Other network operation errors
 			}
 		}
+
 		if uerr.Timeout() {
-			return createErrorMessage(408, uerr, op)
+			return createErrorMessage(408, uerr, op) // URL timeout
 		}
+
+		// Другие URL ошибки
+		return createErrorMessage(400, uerr, op)
 	}
-	return
+
+	// TLS ошибки
+	if strings.Contains(httpError, "tls:") || strings.Contains(httpError, "x509:") {
+		return createErrorMessage(525, err, "tls_handshake")
+	}
+
+	// Общий случай - ошибка неизвестного типа
+	return createErrorMessage(500, err, op)
 }
 
 type errExtensionNotExist struct {
