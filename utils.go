@@ -346,7 +346,11 @@ func genMap() (extMap map[string]utls.TLSExtension) {
 				"h2",
 			},
 		},
-		"17613": &utls.GenericExtension{Id: 17613},
+		"17613": &utls.ApplicationSettingsExtension{
+			SupportedProtocols: []string{
+				"h2",
+			},
+		},
 		"30032": &utls.GenericExtension{Id: 0x7550, Data: []byte{0}}, //FIXME
 		"65281": &utls.RenegotiationInfoExtension{
 			Renegotiation: utls.RenegotiateOnceAsClient,
