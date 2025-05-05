@@ -419,3 +419,5 @@ func parsePage(url string) (string, error) {
     return "", fmt.Errorf("не удалось спарсить %s после %d попыток: %v", url, maxRetries, lastErr)
 }
 ```
+
+### По сути это переделанный форк danny-dasilva cycletls
