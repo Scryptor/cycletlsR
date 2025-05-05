@@ -83,14 +83,15 @@ func (rt *roundTripper) getTransport(req *http.Request, addr string) error {
 }
 
 func (rt *roundTripper) dialTLS(ctx context.Context, network, addr string) (net.Conn, error) {
+	// Первая блокировка для проверки кеша
 	rt.Lock()
-	defer rt.Unlock()
-
-	// If we have the connection from when we determined the HTTPS
-	// cachedTransports to use, return that.
 	if conn := rt.cachedConnections[addr]; conn != nil {
+		rt.Unlock()
 		return conn, nil
 	}
+	rt.Unlock()
+
+	// Выполняем дорогостоящие операции без удержания блокировки
 	rawConn, err := rt.dialer.DialContext(ctx, network, addr)
 	if err != nil {
 		return nil, err
@@ -100,42 +101,50 @@ func (rt *roundTripper) dialTLS(ctx context.Context, network, addr string) (net.
 	if host, _, err = net.SplitHostPort(addr); err != nil {
 		host = addr
 	}
-	//////////////////
 
 	spec, err := StringToSpec(rt.JA3, rt.UserAgent, rt.forceHTTP1)
 	if err != nil {
+		rawConn.Close() // Закрываем соединение при ошибке
 		return nil, err
 	}
 
-	conn := utls.UClient(rawConn, &utls.Config{ServerName: host, OmitEmptyPsk: true, InsecureSkipVerify: rt.InsecureSkipVerify}, // MinVersion:         tls.VersionTLS10,
-		// MaxVersion:         tls.VersionTLS13,
-
-		utls.HelloCustom)
+	conn := utls.UClient(rawConn, &utls.Config{ServerName: host, OmitEmptyPsk: true, InsecureSkipVerify: rt.InsecureSkipVerify}, utls.HelloCustom)
 
 	if err := conn.ApplyPreset(spec); err != nil {
+		rawConn.Close() // Закрываем соединение при ошибке
 		return nil, err
 	}
 
 	if err = conn.Handshake(); err != nil {
-		_ = conn.Close()
-
+		conn.Close() // Закрываем соединение при ошибке рукопожатия
 		if err.Error() == "tls: CurvePreferences includes unsupported curve" {
-			//fix this
 			return nil, fmt.Errorf("conn.Handshake() error for tls 1.3 (please retry request): %+v", err)
 		}
 		return nil, fmt.Errorf("uTlsConn.Handshake() error: %+v", err)
 	}
 
+	// Вторая блокировка для обновления кешей
+	rt.Lock()
+	defer rt.Unlock()
+
+	// Проверяем, не добавило ли другое горутину соединение в кеш, пока мы работали
+	if existingConn := rt.cachedConnections[addr]; existingConn != nil {
+		// Используем существующее соединение вместо только что созданного
+		conn.Close() // Закрываем наше соединение, так как будем использовать существующее
+		return existingConn, nil
+	}
+
+	// Проверяем, есть ли у нас уже транспорт для этого адреса
 	if rt.cachedTransports[addr] != nil {
+		// Кешируем наше соединение и возвращаем его
+		rt.cachedConnections[addr] = conn
 		return conn, nil
 	}
 
-	// No http.Transport constructed yet, create one based on the results
-	// of ALPN.
+	// Создаем новый транспорт на основе согласованного протокола
 	switch conn.ConnectionState().NegotiatedProtocol {
 	case http2.NextProtoTLS:
 		parsedUserAgent := parseUserAgent(rt.UserAgent)
-
 		t2 := http2.Transport{
 			DialTLS:     rt.dialTLSHTTP2,
 			PushHandler: &http2.DefaultPushHandler{},
@@ -143,15 +152,14 @@ func (rt *roundTripper) dialTLS(ctx context.Context, network, addr string) (net.
 		}
 		rt.cachedTransports[addr] = &t2
 	default:
-		// Assume the remote peer is speaking HTTP 1.x + TLS.
+		// HTTP 1.x поверх TLS
 		rt.cachedTransports[addr] = &http.Transport{DialTLSContext: rt.dialTLS, DisableKeepAlives: true}
-
 	}
 
-	// Stash the connection just established for use servicing the
-	// actual request (should be near-immediate).
+	// Кешируем созданное нами соединение
 	rt.cachedConnections[addr] = conn
 
+	// Сигнализируем, что вызывающий код должен повторить попытку с новым транспортом
 	return nil, errProtocolNegotiated
 }
 
